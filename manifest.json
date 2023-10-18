@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Hurin",
+  "version": "0.1",
+  "description": "Secret keeper",
+  "permissions": [
+    "tabs"
+  ],
+  "content_scripts": [{
+    "js": ["content.js"],
+    "matches": ["<all_urls>"]
+  }],
+  "web_accessible_resources": [{
+    "resources": ["secrets.json"],
+    "matches": ["<all_urls>"]
+  }],
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
