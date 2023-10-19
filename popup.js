@@ -1,65 +1,94 @@
 "use strict";
 
-async function getCurrentTab() {
-  const queryOptions = { active: true, lastFocusedWindow: true };
-  const [tab] = await chrome.tabs.query(queryOptions);
-  return tab
-}
-
-function renderEmpty() {
-  const displayElement = document.createElement("div");
-  displayElement.innerText = "No secrets";
-  document.querySelector("#content").appendChild(displayElement);
-}
-
-function renderPage(siteList) {
-  if (!siteList || siteList.length == 0) {
-    renderEmpty();
-    return;
+class Element {
+  constructor(tag) {
+    this.el = document.createElement(tag);
   }
-  siteList.forEach((siteData) => {
-    const siteElement = document.createElement("div");
-    siteElement.classList.add("site");
-    const urlElement = document.createElement("div");
-    urlElement.classList.add("url");
-    urlElement.innerText = siteData.url;
-    siteElement.appendChild(urlElement);
-    siteData.secrets.forEach((secret) => {
-      const secretElement = document.createElement("div");
-      secretElement.classList.add("secret");
-      secretElement.innerText = secret.username;
-      secretElement.addEventListener("drag", () => {
-        navigator.clipboard.writeText(secret.password);
-      });
-      siteElement.appendChild(secretElement);
-    });
-    document.querySelector("#content").appendChild(siteElement);
-  });
+
+  clazz(cls) {
+    this.el.classList.add(cls);
+    return this;
+  }
+
+  value(v) {
+    this.el.innerText = v;
+    return this;
+  }
+
+  get e() {
+    return this.el;
+  }
 }
 
-async function getSiteList(url) {
-  const path = await chrome.runtime.getURL("secrets.json");
-  const resp = await fetch(path);
-  const queryData = await resp.json();
-  let result = [];
-  queryData.forEach((q) => {
-    const re = new RegExp(q.url);
-    if (re.exec(url)) {
-      result.push(q);
+class Renderer {
+  constructor() {
+    this.content = document.querySelector("#content");
+  }
+
+  renderBlank() {
+    const displayElement = new Element("div").value("No secrets")
+    this.content.appendChild(displayElement.e);
+  }
+
+  renderPage(siteList) {
+    if (!siteList || siteList.length == 0) {
+      this.renderBlank();
+      return;
     }
-  });
-  return result;
-}
-
-async function loadContent() {
-  const tab = await getCurrentTab();
-  if (!tab) {
-    renderEmpty();
-    return;
+    siteList.forEach((siteData) => {
+      const siteElement = new Element("div").clazz("site");
+      const urlElement = new Element("div").clazz("url").value(siteData.url);
+      siteElement.e.appendChild(urlElement.e);
+      siteData.secrets.forEach((secret) => {
+        const secretElement = new Element("div").clazz("secret").value(secret.username);
+        secretElement.e.addEventListener("drag", () => {
+          navigator.clipboard.writeText(secret.password);
+        });
+        siteElement.e.appendChild(secretElement.e);
+      });
+      this.content.appendChild(siteElement.e);
+    });
   }
-  const url = new URL(tab.url);
-  const siteList = await getSiteList(url.origin);
-  renderPage(siteList);
 }
 
-window.onload = loadContent;
+class Popup {
+  constructor(renderer) {
+    this.renderer = renderer;
+  }
+
+  getCurrentTab = async () => {
+    const queryOptions = { active: true, lastFocusedWindow: true };
+    const [tab] = await chrome.tabs.query(queryOptions);
+    return tab
+  }
+
+  getSiteList = async (url) => {
+    const path = await chrome.runtime.getURL("secrets.json");
+    const resp = await fetch(path);
+    const queryData = await resp.json();
+    let result = [];
+    queryData.forEach((q) => {
+      const re = new RegExp(q.url);
+      if (re.exec(url)) {
+        result.push(q);
+      }
+    });
+    return result;
+  }
+
+  loadContent = async () => {
+    const tab = await this.getCurrentTab();
+    if (!tab) {
+      this.renderer.renderBlank();
+      return;
+    }
+    const url = new URL(tab.url);
+    const siteList = await this.getSiteList(url.origin);
+    this.renderer.renderPage(siteList);
+  }
+}
+
+const renderer = new Renderer();
+const popup = new Popup(renderer);
+
+document.addEventListener("DOMContentLoaded", popup.loadContent);
