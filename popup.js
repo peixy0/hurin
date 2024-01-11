@@ -26,7 +26,7 @@ class Renderer {
   }
 
   renderBlank() {
-    const displayElement = new Element("div").value("No secrets")
+    const displayElement = new Element("div").value("No secrets");
     this.content.appendChild(displayElement.e);
   }
 
@@ -40,7 +40,9 @@ class Renderer {
       const urlElement = new Element("div").clazz("url").value(siteData.url);
       siteElement.e.appendChild(urlElement.e);
       siteData.secrets.forEach((secret) => {
-        const secretElement = new Element("div").clazz("secret").value(secret.username);
+        const secretElement = new Element("div")
+          .clazz("secret")
+          .value(secret.username);
         secretElement.e.addEventListener("drag", () => {
           navigator.clipboard.writeText(secret.password);
         });
@@ -59,8 +61,8 @@ class Popup {
   getCurrentTab = async () => {
     const queryOptions = { active: true, lastFocusedWindow: true };
     const [tab] = await chrome.tabs.query(queryOptions);
-    return tab
-  }
+    return tab;
+  };
 
   getSiteList = async (url) => {
     const path = await chrome.runtime.getURL("secrets.json");
@@ -74,7 +76,7 @@ class Popup {
       }
     });
     return result;
-  }
+  };
 
   loadContent = async () => {
     const tab = await this.getCurrentTab();
@@ -85,7 +87,7 @@ class Popup {
     const url = new URL(tab.url);
     const siteList = await this.getSiteList(url.origin);
     this.renderer.renderPage(siteList);
-  }
+  };
 }
 
 const renderer = new Renderer();
