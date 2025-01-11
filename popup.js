@@ -70,8 +70,7 @@ class Popup {
     const queryData = await resp.json();
     let result = [];
     queryData.forEach((q) => {
-      const re = new RegExp(q.url);
-      if (re.exec(url)) {
+      if (url.endsWith(q.url)) {
         result.push(q);
       }
     });
